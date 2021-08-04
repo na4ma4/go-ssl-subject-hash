@@ -26,7 +26,7 @@ func (s SubjHash) String() string {
 // issuer_hash for the certificate.
 func Issuer(cert *x509.Certificate) (SubjHash, error) {
 	if cert == nil {
-		return [4]byte{}, ErrInvalidCertificate
+		return SubjHash{}, ErrInvalidCertificate
 	}
 
 	return hashRawValue(cert.RawIssuer)
@@ -36,7 +36,7 @@ func Issuer(cert *x509.Certificate) (SubjHash, error) {
 // subject_hash for the certificate.
 func Subject(cert *x509.Certificate) (SubjHash, error) {
 	if cert == nil {
-		return [4]byte{}, ErrInvalidCertificate
+		return SubjHash{}, ErrInvalidCertificate
 	}
 
 	return hashRawValue(cert.RawSubject)
@@ -72,8 +72,9 @@ func hashRawValue(v []byte) (SubjHash, error) {
 	}
 
 	h := sha1.Sum(sb.Bytes()) //nolint:gosec // it's weak, openssl uses it.
-	n := truncatedHash(h, 4)
-	copy(hash[:], n[:4])
+	for i := 0; i < 4; i++ {
+		hash[3-i] = h[i]
+	}
 
 	return hash, nil
 }
@@ -86,17 +87,4 @@ func remarshalASN1(val interface{}) ([]byte, error) {
 	}
 
 	return b, err
-}
-
-func truncatedHash(b [20]byte, l int) []byte {
-	if l < 1 || len(b) < 1 {
-		return []byte{}
-	}
-
-	result := make([]byte, l)
-	for i := 0; i < l; i++ {
-		result[l-1-i] = b[i]
-	}
-
-	return result
 }
