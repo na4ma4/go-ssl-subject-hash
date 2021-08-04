@@ -15,6 +15,7 @@ import (
 // ErrInvalidCertificate is returned when an invalid certificate is supplied.
 var ErrInvalidCertificate = errors.New("invalid certificate")
 
+// SubjHash is the certificate hash with fmt.Stringer interface support.
 type SubjHash [4]byte
 
 func (s SubjHash) String() string {

@@ -43,5 +43,4 @@ var _ = Describe("Subjhash/Hash", func() {
 		Entry("ca-cert-USERTrust_ECC_Certification_Authority.pem", "../test/f30dd6ad.0"),
 		Entry("ca-cert-USERTrust_RSA_Certification_Authority.pem", "../test/fc5a8f99.0"),
 	)
-
 })

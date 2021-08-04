@@ -11,6 +11,9 @@ linters:
     - paralleltest
     - scopelint
 
+run:
+  tests: false
+
 issues:
   exclude-use-default: false
   exclude:
