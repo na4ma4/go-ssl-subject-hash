@@ -17,7 +17,7 @@ var empty = subjhash.SubjHash{0, 0, 0, 0}
 
 var _ = Describe("Subjhash/Hash", func() {
 	It("throws an error on a nil certificate", func() {
-		b, err := subjhash.Certificate(nil)
+		b, err := subjhash.Subject(nil)
 		Expect(err).To(HaveOccurred())
 		Expect(b).To(Equal(empty))
 	})
@@ -34,10 +34,13 @@ var _ = Describe("Subjhash/Hash", func() {
 
 			filebase := strings.TrimSuffix(filepath.Base(filename), ".0")
 
-			h, err := subjhash.Certificate(c)
+			h, err := subjhash.Subject(c)
 			Expect(err).NotTo(HaveOccurred())
-
 			Expect(h.String()).To(Equal(filebase))
+
+			i, err := subjhash.Subject(c)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(i.String()).To(Equal(filebase))
 		},
 		Entry("ca-cert-Amazon_Root_CA_1.pem", "../test/ce5e74ef.0"),
 		Entry("ca-cert-USERTrust_ECC_Certification_Authority.pem", "../test/f30dd6ad.0"),

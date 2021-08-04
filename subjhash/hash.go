@@ -22,19 +22,33 @@ func (s SubjHash) String() string {
 	return fmt.Sprintf("%x", [4]byte(s))
 }
 
-// Certificate takes a *x509.Certificate and returns the openssl 1.0.1+ compatible
+// Issuer takes a *x509.Certificate and returns the openssl 1.0.1+ compatible
+// issuer_hash for the certificate.
+func Issuer(cert *x509.Certificate) (SubjHash, error) {
+	if cert == nil {
+		return [4]byte{}, ErrInvalidCertificate
+	}
+
+	return hashRawValue(cert.RawIssuer)
+}
+
+// Subject takes a *x509.Certificate and returns the openssl 1.0.1+ compatible
 // subject_hash for the certificate.
-func Certificate(cert *x509.Certificate) (SubjHash, error) {
+func Subject(cert *x509.Certificate) (SubjHash, error) {
+	if cert == nil {
+		return [4]byte{}, ErrInvalidCertificate
+	}
+
+	return hashRawValue(cert.RawSubject)
+}
+
+func hashRawValue(v []byte) (SubjHash, error) {
 	var (
 		subject pkix.RDNSequence
 		hash    [4]byte
 	)
 
-	if cert == nil {
-		return hash, ErrInvalidCertificate
-	}
-
-	if _, err := asn1.Unmarshal(cert.RawSubject, &subject); err != nil {
+	if _, err := asn1.Unmarshal(v, &subject); err != nil {
 		return hash, fmt.Errorf("unable to unmarshal ASN.1 subject: %w", err)
 	}
 
