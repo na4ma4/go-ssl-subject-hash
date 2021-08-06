@@ -13,6 +13,8 @@ linters:
 
 run:
   tests: false
+  skip-dirs:
+    - test/wip.code
 
 issues:
   exclude-use-default: false

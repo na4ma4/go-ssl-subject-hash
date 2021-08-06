@@ -9,7 +9,9 @@ import (
 	"encoding/asn1"
 	"errors"
 	"fmt"
+	"regexp"
 	"strings"
+	"unicode/utf8"
 )
 
 // ErrInvalidCertificate is returned when an invalid certificate is supplied.
@@ -42,13 +44,38 @@ func Subject(cert *x509.Certificate) (SubjHash, error) {
 	return hashRawValue(cert.RawSubject)
 }
 
+func lowerCaseString(input string) string {
+	output := ""
+
+	for _, runeValue := range input {
+		if runeValue >= utf8.RuneSelf {
+			output += fmt.Sprintf("%c", runeValue)
+
+			continue
+		}
+
+		if 'A' <= runeValue && runeValue <= 'Z' {
+			runeValue += 'a' - 'A'
+			output += fmt.Sprintf("%c", runeValue)
+
+			continue
+		}
+
+		output += fmt.Sprintf("%c", runeValue)
+	}
+
+	return output
+}
+
 func hashRawValue(v []byte) (SubjHash, error) {
 	var (
 		subject pkix.RDNSequence
 		hash    [4]byte
 	)
 
-	if _, err := asn1.Unmarshal(v, &subject); err != nil {
+	re := regexp.MustCompile(`\s+`)
+
+	if _, err := asn1.UnmarshalWithParams(v, &subject, "utf8"); err != nil {
 		return hash, fmt.Errorf("unable to unmarshal ASN.1 subject: %w", err)
 	}
 
@@ -57,7 +84,7 @@ func hashRawValue(v []byte) (SubjHash, error) {
 	for j := range subject {
 		for i := range subject[j] {
 			if v, ok := subject[j][i].Value.(string); ok {
-				subject[j][i].Value = strings.ToLower(v)
+				subject[j][i].Value = lowerCaseString(strings.TrimSpace(re.ReplaceAllString(v, " ")))
 			}
 		}
 
@@ -82,8 +109,11 @@ func hashRawValue(v []byte) (SubjHash, error) {
 //nolint:wrapcheck // it's wrapped in Certificate.
 func remarshalASN1(val interface{}) ([]byte, error) {
 	b, err := asn1.Marshal(val)
-	if len(b) > 9 {
-		b[9] = asn1.TagUTF8String
+	if len(b) > 9 && b[4] == asn1.TagOID {
+		offset := int(b[5])
+		if len(b) > 6+offset && b[6+offset] == asn1.TagPrintableString {
+			b[6+offset] = asn1.TagUTF8String
+		}
 	}
 
 	return b, err
