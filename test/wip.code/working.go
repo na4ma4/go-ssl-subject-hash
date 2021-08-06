@@ -1,3 +1,4 @@
+//nolint:deadcode,gosimple,unused
 package main
 
 import (

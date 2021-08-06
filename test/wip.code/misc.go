@@ -1,3 +1,4 @@
+//nolint:unused
 package main
 
 func checkErr(err error) {
