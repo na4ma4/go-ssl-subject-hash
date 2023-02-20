@@ -1,4 +1,4 @@
-//nolint:unused
+//nolint:unused // testing
 package main
 
 func checkErr(err error) {

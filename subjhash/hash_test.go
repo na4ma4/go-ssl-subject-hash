@@ -14,6 +14,7 @@ import (
 	. "github.com/onsi/gomega"
 )
 
+//nolint:gochecknoglobals // test variable
 var empty = subjhash.SubjHash{0, 0, 0, 0}
 
 var _ = Describe("Subjhash/Hash", func() {
@@ -72,14 +73,17 @@ var _ = Describe("Subjhash/Hash", func() {
 	)
 
 	Describe("tricky certificates", func() {
+		//nolint:lll // test variable
 		It("[128805a3.0] /C=EE/O=AS Sertifitseerimiskeskus/CN=EE Certification Centre Root CA/emailAddress=pki@sk.ee", func() {
 			checkCertHashFunc("../test/ca-certs/128805a3.0")
 		})
 
+		//nolint:lll // test variable
 		It("[5273a94c.0] /C=TR/L=Ankara/O=E-Tu\xC4\x9Fra EBG Bili\xC5\x9Fim Teknolojileri ve Hizmetleri A.\xC5\x9E./OU=E-Tugra Sertifikasyon Merkezi/CN=E-Tugra Certification Authority", func() {
 			checkCertHashFunc("../test/ca-certs/5273a94c.0")
 		})
 
+		//nolint:lll // test variable
 		It("[8160b96c.0] /C=HU/L=Budapest/O=Microsec Ltd./CN=Microsec e-Szigno Root CA 2009/emailAddress=info@e-szigno.hu", func() {
 			checkCertHashFunc("../test/ca-certs/8160b96c.0")
 		})

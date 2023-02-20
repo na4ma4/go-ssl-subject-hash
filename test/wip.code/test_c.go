@@ -1,4 +1,4 @@
-//nolint:deadcode,gosimple,unused
+//nolint:deadcode,gomnd,unused // testing
 package main
 
 import (
@@ -14,7 +14,8 @@ import (
 	"github.com/na4ma4/go-ssl-subject-hash/subjhash"
 )
 
-func test_c() {
+func testC() {
+	//nolint:lll // testing
 	soExample, err := base64.StdEncoding.DecodeString("MIHMMQswCQYDVQQGDAJkZTERMA8GA1UECAwIYsO2ciBsaW4xEjAQBgNVBAcMCWLDlnIgbCBpbjEuMCwGA1UECgwl0JLQuNC60LjQv9C10LTQuNGOINCS0LjQutC40L/QtdC00LjRjjEWMBQGA1UECwwNZXhhbXBsZSBjb3JwLjEoMCYGA1UEAwwfbWljaGFlbC1vIGNlcnRpZmljYXRlIGF1dGhvcml0eTEkMCIGCSqGSIb3DQEJAQwVbWljaGFlbC1vQGV4YW1wbGUuY29t")
 	checkErr(err)
 
@@ -47,8 +48,8 @@ func test_c() {
 		// }
 		// log.Printf("Sub[%d]: %x", j, subject[j])
 
-		b, err := asn1.MarshalWithParams(subject[j], "")
-		checkErr(err)
+		b, merr := asn1.MarshalWithParams(subject[j], "")
+		checkErr(merr)
 
 		log.Printf("Sub[%d]: % x", j, b)
 
@@ -57,8 +58,8 @@ func test_c() {
 		}
 
 		// // log.Printf("Sub[%d]: %x", j, b)
-		_, err = sb.Write(b)
-		checkErr(err)
+		_, merr = sb.Write(b)
+		checkErr(merr)
 		// if v, ok := sub.(pkix.AttributeTypeAndValue); ok {
 		// 	log.Printf("PKIX: %x", v)
 		// } else {

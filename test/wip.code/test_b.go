@@ -1,9 +1,9 @@
-//nolint:deadcode,gosimple,unused
+//nolint:deadcode,gomnd,unused // testing
 package main
 
 import (
 	"bytes"
-	"crypto/sha1"
+	"crypto/sha1" //nolint:gosec // openssl compat
 	"crypto/x509"
 	"crypto/x509/pkix"
 	"encoding/asn1"
@@ -13,7 +13,7 @@ import (
 	"strings"
 )
 
-func test_b() {
+func testB() {
 	buf, err := ioutil.ReadFile("test/ca-cert-Amazon_Root_CA_1.pem")
 	checkErr(err)
 	b, _ := pem.Decode(buf)
@@ -30,7 +30,7 @@ func test_b() {
 	// log.Printf("Subject: %#v", subject)
 
 	sb := bytes.NewBuffer(nil)
-	for j, _ := range subject {
+	for j := range subject {
 		// log.Printf("Sub[%d]: %x", j, subject[j])
 		for i := range subject[j] {
 			// log.Printf("Sub1(Type): %x", subject[j][i].Type)
@@ -59,7 +59,7 @@ func test_b() {
 	// log.Printf("SubReass: %x", sb)
 
 	// log.Printf("Subject: %s", subject.String())
-	h := sha1.Sum(sb.Bytes())
+	h := sha1.Sum(sb.Bytes()) //nolint:gosec // openssl compat
 	n := truncatedHash(h, 4)
 	log.Printf("Sum[FINAL]: (%x) [%x]", h, n)
 }
