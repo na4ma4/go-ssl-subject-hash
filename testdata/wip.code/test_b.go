@@ -8,13 +8,13 @@ import (
 	"crypto/x509/pkix"
 	"encoding/asn1"
 	"encoding/pem"
-	"io/ioutil"
 	"log"
+	"os"
 	"strings"
 )
 
 func testB() {
-	buf, err := ioutil.ReadFile("test/ca-cert-Amazon_Root_CA_1.pem")
+	buf, err := os.ReadFile("testdata/ca-cert-Amazon_Root_CA_1.pem")
 	checkErr(err)
 	b, _ := pem.Decode(buf)
 	cert, err := x509.ParseCertificate(b.Bytes)
