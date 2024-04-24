@@ -8,8 +8,8 @@ import (
 	"encoding/asn1"
 	"encoding/base64"
 	"encoding/pem"
-	"io/ioutil"
 	"log"
+	"os"
 
 	"github.com/na4ma4/go-ssl-subject-hash/subjhash"
 )
@@ -75,7 +75,7 @@ func testC() {
 
 	log.Printf("Dst[b]: % x", sb.Bytes())
 
-	cd, err := ioutil.ReadFile("test/stackoverflow-example.pem")
+	cd, err := os.ReadFile("testdata/stackoverflow-example.pem")
 	checkErr(err)
 
 	p, _ := pem.Decode(cd)

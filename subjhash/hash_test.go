@@ -3,7 +3,6 @@ package subjhash_test
 import (
 	"crypto/x509"
 	"encoding/pem"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
@@ -25,7 +24,7 @@ var _ = Describe("Subjhash/Hash", func() {
 	})
 
 	checkCertFileHashFunc := func(filename, hash string) {
-		cd, err := ioutil.ReadFile(filename)
+		cd, err := os.ReadFile(filename)
 		Expect(err).NotTo(HaveOccurred())
 
 		p, _ := pem.Decode(cd)
@@ -46,11 +45,11 @@ var _ = Describe("Subjhash/Hash", func() {
 	}
 
 	It("returns correct for the stackoverflow example", func() {
-		checkCertFileHashFunc("../test/stackoverflow-example.pem", "5ba4b7de")
+		checkCertFileHashFunc("../testdata/stackoverflow-example.pem", "5ba4b7de")
 	})
 
 	certHashEntryList := []TableEntry{}
-	certHashList, err := os.ReadDir("../test/ca-certs/")
+	certHashList, err := os.ReadDir("../testdata/ca-certs/")
 	if err != nil {
 		Expect(err).NotTo(HaveOccurred())
 	}
@@ -59,33 +58,33 @@ var _ = Describe("Subjhash/Hash", func() {
 			continue
 		}
 		certHashEntryList = append(certHashEntryList,
-			Entry(certHashFile.Name(), "../test/ca-certs/"+certHashFile.Name()),
+			Entry(certHashFile.Name(), "../testdata/ca-certs/"+certHashFile.Name()),
 		)
 	}
 
 	DescribeTable(
 		"correctly gets the cert hash",
 		checkCertHashFunc,
-		// Entry("ca-cert-Amazon_Root_CA_1.pem", "../test/ce5e74ef.0"),
-		// Entry("ca-cert-USERTrust_ECC_Certification_Authority.pem", "../test/f30dd6ad.0"),
-		// Entry("ca-cert-USERTrust_RSA_Certification_Authority.pem", "../test/fc5a8f99.0"),
+		// Entry("ca-cert-Amazon_Root_CA_1.pem", "../testdata/ce5e74ef.0"),
+		// Entry("ca-cert-USERTrust_ECC_Certification_Authority.pem", "../testdata/f30dd6ad.0"),
+		// Entry("ca-cert-USERTrust_RSA_Certification_Authority.pem", "../testdata/fc5a8f99.0"),
 		certHashEntryList...,
 	)
 
 	Describe("tricky certificates", func() {
 		//nolint:lll // test variable
 		It("[128805a3.0] /C=EE/O=AS Sertifitseerimiskeskus/CN=EE Certification Centre Root CA/emailAddress=pki@sk.ee", func() {
-			checkCertHashFunc("../test/ca-certs/128805a3.0")
+			checkCertHashFunc("../testdata/ca-certs/128805a3.0")
 		})
 
 		//nolint:lll // test variable
 		It("[5273a94c.0] /C=TR/L=Ankara/O=E-Tu\xC4\x9Fra EBG Bili\xC5\x9Fim Teknolojileri ve Hizmetleri A.\xC5\x9E./OU=E-Tugra Sertifikasyon Merkezi/CN=E-Tugra Certification Authority", func() {
-			checkCertHashFunc("../test/ca-certs/5273a94c.0")
+			checkCertHashFunc("../testdata/ca-certs/5273a94c.0")
 		})
 
 		//nolint:lll // test variable
 		It("[8160b96c.0] /C=HU/L=Budapest/O=Microsec Ltd./CN=Microsec e-Szigno Root CA 2009/emailAddress=info@e-szigno.hu", func() {
-			checkCertHashFunc("../test/ca-certs/8160b96c.0")
+			checkCertHashFunc("../testdata/ca-certs/8160b96c.0")
 		})
 
 	})
