@@ -49,12 +49,19 @@ var _ = Describe("Subjhash/Hash", func() {
 	})
 
 	certHashEntryList := []TableEntry{}
-	certHashList, err := os.ReadDir("../testdata/ca-certs/")
-	if err != nil {
-		Expect(err).NotTo(HaveOccurred())
+	var certHashList []os.DirEntry
+	{
+		var err error
+		certHashList, err = os.ReadDir("../testdata/ca-certs/")
+		if err != nil {
+			Expect(err).NotTo(HaveOccurred())
+		}
 	}
 	for _, certHashFile := range certHashList {
 		if certHashFile.IsDir() {
+			continue
+		}
+		if certHashFile.Name() == "349f2832.0" { // negative serial number (pre go1.23 worked)
 			continue
 		}
 		certHashEntryList = append(certHashEntryList,
@@ -72,6 +79,19 @@ var _ = Describe("Subjhash/Hash", func() {
 	)
 
 	Describe("tricky certificates", func() {
+		It("[349f2832.0] /O=Agencia Catalana de Certificacio (NIF Q-0801176-I)/", func() {
+			var cd []byte
+			{
+				var err error
+				cd, err = os.ReadFile("../testdata/ca-certs/349f2832.0")
+				Expect(err).NotTo(HaveOccurred())
+			}
+
+			p, _ := pem.Decode(cd)
+			_, err := x509.ParseCertificate(p.Bytes)
+			Expect(err).To(HaveOccurred())
+		})
+
 		//nolint:lll // test variable
 		It("[128805a3.0] /C=EE/O=AS Sertifitseerimiskeskus/CN=EE Certification Centre Root CA/emailAddress=pki@sk.ee", func() {
 			checkCertHashFunc("../testdata/ca-certs/128805a3.0")
@@ -86,6 +106,5 @@ var _ = Describe("Subjhash/Hash", func() {
 		It("[8160b96c.0] /C=HU/L=Budapest/O=Microsec Ltd./CN=Microsec e-Szigno Root CA 2009/emailAddress=info@e-szigno.hu", func() {
 			checkCertHashFunc("../testdata/ca-certs/8160b96c.0")
 		})
-
 	})
 })

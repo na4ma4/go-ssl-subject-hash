@@ -99,7 +99,7 @@ func hashRawValue(v []byte) (SubjHash, error) {
 	}
 
 	h := sha1.Sum(sb.Bytes()) //nolint:gosec // it's weak, openssl uses it.
-	for i := 0; i < 4; i++ {
+	for i := range 4 {
 		hash[3-i] = h[i]
 	}
 
