@@ -45,26 +45,27 @@ func Subject(cert *x509.Certificate) (SubjHash, error) {
 }
 
 func lowerCaseString(input string) string {
-	output := ""
+	// output := ""
 
+	op := strings.Builder{}
 	for _, runeValue := range input {
 		if runeValue >= utf8.RuneSelf {
-			output += fmt.Sprintf("%c", runeValue)
+			op.WriteRune(runeValue)
 
 			continue
 		}
 
 		if 'A' <= runeValue && runeValue <= 'Z' {
 			runeValue += 'a' - 'A'
-			output += fmt.Sprintf("%c", runeValue)
+			op.WriteRune(runeValue)
 
 			continue
 		}
 
-		output += fmt.Sprintf("%c", runeValue)
+		op.WriteRune(runeValue)
 	}
 
-	return output
+	return op.String()
 }
 
 func hashRawValue(v []byte) (SubjHash, error) {
@@ -100,7 +101,7 @@ func hashRawValue(v []byte) (SubjHash, error) {
 
 	h := sha1.Sum(sb.Bytes()) //nolint:gosec // it's weak, openssl uses it.
 	for i := range 4 {
-		hash[3-i] = h[i]
+		hash[3-i] = h[i] //nolint:gosec // it's not out of range ?
 	}
 
 	return hash, nil
