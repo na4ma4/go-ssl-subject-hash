@@ -17,14 +17,14 @@ import (
 // ErrInvalidCertificate is returned when an invalid certificate is supplied.
 var ErrInvalidCertificate = errors.New("invalid certificate")
 
-// SubjHash is the certificate hash with fmt.Stringer interface support.
+// SubjHash is the certificate hash with [fmt.Stringer] interface support.
 type SubjHash [4]byte
 
 func (s SubjHash) String() string {
 	return fmt.Sprintf("%x", [4]byte(s))
 }
 
-// Issuer takes a *x509.Certificate and returns the openssl 1.0.1+ compatible
+// Issuer takes a *[x509.Certificate] and returns the openssl 1.0.1+ compatible
 // issuer_hash for the certificate.
 func Issuer(cert *x509.Certificate) (SubjHash, error) {
 	if cert == nil {
@@ -34,7 +34,7 @@ func Issuer(cert *x509.Certificate) (SubjHash, error) {
 	return hashRawValue(cert.RawIssuer)
 }
 
-// Subject takes a *x509.Certificate and returns the openssl 1.0.1+ compatible
+// Subject takes a *[x509.Certificate] and returns the openssl 1.0.1+ compatible
 // subject_hash for the certificate.
 func Subject(cert *x509.Certificate) (SubjHash, error) {
 	if cert == nil {
@@ -101,14 +101,14 @@ func hashRawValue(v []byte) (SubjHash, error) {
 
 	h := sha1.Sum(sb.Bytes()) //nolint:gosec // it's weak, openssl uses it.
 	for i := range 4 {
-		hash[3-i] = h[i] //nolint:gosec // it's not out of range ?
+		hash[3-i] = h[i]
 	}
 
 	return hash, nil
 }
 
 //nolint:wrapcheck // it's wrapped in Certificate.
-func remarshalASN1(val interface{}) ([]byte, error) {
+func remarshalASN1(val any) ([]byte, error) {
 	b, err := asn1.Marshal(val)
 	if len(b) > 9 && b[4] == asn1.TagOID {
 		offset := int(b[5])
