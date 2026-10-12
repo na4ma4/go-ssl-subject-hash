@@ -3,116 +3,169 @@ package subjhash_test
 import (
 	"crypto/x509"
 	"encoding/pem"
+	"errors"
 	"os"
 	"path/filepath"
 	"strings"
-
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/ginkgo/extensions/table"
-	. "github.com/onsi/gomega"
+	"testing"
 
 	"github.com/na4ma4/go-ssl-subject-hash/subjhash"
 )
 
-//nolint:gochecknoglobals // test variable
-var empty = subjhash.SubjHash{0, 0, 0, 0}
+const caCertsDir = "../testdata/ca-certs/"
 
-var _ = Describe("Subjhash/Hash", func() {
-	It("throws an error on a nil certificate", func() {
-		b, err := subjhash.Subject(nil)
-		Expect(err).To(HaveOccurred())
-		Expect(b).To(Equal(empty))
-	})
+// skipCertHashes contains certificates that can't be parsed by the current Go
+// version, so they are skipped in the table driven tests.
+//
+//nolint:gochecknoglobals // list of certificates to skip in the tests.
+var skipCertHashes = map[string]string{
+	"349f2832.0": "negative serial number (pre go1.23 worked)",
+}
 
-	checkCertFileHashFunc := func(filename, hash string) {
-		cd, err := os.ReadFile(filename)
-		Expect(err).NotTo(HaveOccurred())
+// readCertificate reads and parses the PEM encoded certificate stored in filename.
+func readCertificate(tb testing.TB, filename string) *x509.Certificate {
+	tb.Helper()
 
-		p, _ := pem.Decode(cd)
-		c, err := x509.ParseCertificate(p.Bytes)
-		Expect(err).NotTo(HaveOccurred())
-
-		h, err := subjhash.Subject(c)
-		Expect(err).NotTo(HaveOccurred())
-		Expect(h.String()).To(Equal(hash))
-
-		i, err := subjhash.Issuer(c)
-		Expect(err).NotTo(HaveOccurred())
-		Expect(i.String()).To(Equal(hash))
+	cd, err := os.ReadFile(filename)
+	if err != nil {
+		tb.Fatalf("unable to read certificate file %s: %v", filename, err)
 	}
 
-	checkCertHashFunc := func(filename string) {
-		checkCertFileHashFunc(filename, strings.TrimSuffix(filepath.Base(filename), ".0"))
+	p, _ := pem.Decode(cd)
+	if p == nil {
+		tb.Fatalf("unable to decode PEM block of %s", filename)
 	}
 
-	It("returns correct for the stackoverflow example", func() {
-		checkCertFileHashFunc("../testdata/stackoverflow-example.pem", "5ba4b7de")
-	})
-
-	certHashEntryList := []TableEntry{}
-	var certHashList []os.DirEntry
-	{
-		var err error
-		certHashList, err = os.ReadDir("../testdata/ca-certs/")
-		if err != nil {
-			Expect(err).NotTo(HaveOccurred())
-		}
-	}
-	for _, certHashFile := range certHashList {
-		if certHashFile.IsDir() {
-			continue
-		}
-		if certHashFile.Name() == "349f2832.0" { // negative serial number (pre go1.23 worked)
-			continue
-		}
-		certHashEntryList = append(
-			certHashEntryList,
-			Entry(certHashFile.Name(), "../testdata/ca-certs/"+certHashFile.Name()),
-		)
+	c, err := x509.ParseCertificate(p.Bytes)
+	if err != nil {
+		tb.Fatalf("unable to parse certificate %s: %v", filename, err)
 	}
 
-	DescribeTable(
-		"correctly gets the cert hash",
-		checkCertHashFunc,
-		// Entry("ca-cert-Amazon_Root_CA_1.pem", "../testdata/ce5e74ef.0"),
-		// Entry("ca-cert-USERTrust_ECC_Certification_Authority.pem", "../testdata/f30dd6ad.0"),
-		// Entry("ca-cert-USERTrust_RSA_Certification_Authority.pem", "../testdata/fc5a8f99.0"),
-		certHashEntryList...,
-	)
+	return c
+}
 
-	Describe("tricky certificates", func() {
-		It("[349f2832.0] /O=Agencia Catalana de Certificacio (NIF Q-0801176-I)/", func() {
-			var cd []byte
-			{
-				var err error
-				cd, err = os.ReadFile("../testdata/ca-certs/349f2832.0")
-				Expect(err).NotTo(HaveOccurred())
+// checkCertFileHash checks that both the subject and the issuer hash of the
+// certificate stored in filename are equal to the given hash.
+func checkCertFileHash(tb testing.TB, filename, hash string) {
+	tb.Helper()
+
+	c := readCertificate(tb, filename)
+
+	subjectHash, err := subjhash.Subject(c)
+	if err != nil {
+		tb.Fatalf("unable to calculate subject hash of %s: %v", filename, err)
+	}
+
+	if got := subjectHash.String(); got != hash {
+		tb.Errorf("unexpected subject hash for %s: got %q, want %q", filename, got, hash)
+	}
+
+	issuerHash, err := subjhash.Issuer(c)
+	if err != nil {
+		tb.Fatalf("unable to calculate issuer hash of %s: %v", filename, err)
+	}
+
+	if got := issuerHash.String(); got != hash {
+		tb.Errorf("unexpected issuer hash for %s: got %q, want %q", filename, got, hash)
+	}
+}
+
+// checkCertHash checks that the subject and the issuer hash of the certificate
+// stored in filename are equal to the filename itself, as it is how openssl
+// names the certificate hash files.
+func checkCertHash(tb testing.TB, filename string) {
+	tb.Helper()
+
+	checkCertFileHash(tb, filename, strings.TrimSuffix(filepath.Base(filename), ".0"))
+}
+
+func TestNilCertificate(t *testing.T) {
+	t.Parallel()
+
+	for name, hashFunc := range map[string]func(*x509.Certificate) (subjhash.SubjHash, error){
+		"Subject": subjhash.Subject,
+		"Issuer":  subjhash.Issuer,
+	} {
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+
+			h, err := hashFunc(nil)
+			if !errors.Is(err, subjhash.ErrInvalidCertificate) {
+				t.Errorf("unexpected error: got %v, want %v", err, subjhash.ErrInvalidCertificate)
 			}
 
-			p, _ := pem.Decode(cd)
-			_, err := x509.ParseCertificate(p.Bytes)
-			Expect(err).To(HaveOccurred())
+			if h != (subjhash.SubjHash{}) {
+				t.Errorf("unexpected hash: got %s, want empty hash", h)
+			}
 		})
+	}
+}
 
-		It(
-			"[128805a3.0] /C=EE/O=AS Sertifitseerimiskeskus/CN=EE Certification Centre Root CA/emailAddress=pki@sk.ee",
-			func() {
-				checkCertHashFunc("../testdata/ca-certs/128805a3.0")
-			},
-		)
+func TestStackoverflowExample(t *testing.T) {
+	t.Parallel()
 
-		It(
-			"[5273a94c.0] /C=TR/L=Ankara/O=E-Tu\xC4\x9Fra EBG Bili\xC5\x9Fim Teknolojileri ve Hizmetleri A.\xC5\x9E./OU=E-Tugra Sertifikasyon Merkezi/CN=E-Tugra Certification Authority",
-			func() {
-				checkCertHashFunc("../testdata/ca-certs/5273a94c.0")
-			},
-		)
+	checkCertFileHash(t, "../testdata/stackoverflow-example.pem", "5ba4b7de")
+}
 
-		It(
-			"[8160b96c.0] /C=HU/L=Budapest/O=Microsec Ltd./CN=Microsec e-Szigno Root CA 2009/emailAddress=info@e-szigno.hu",
-			func() {
-				checkCertHashFunc("../testdata/ca-certs/8160b96c.0")
-			},
-		)
+func TestCACertHashes(t *testing.T) {
+	t.Parallel()
+
+	entries, err := os.ReadDir(caCertsDir)
+	if err != nil {
+		t.Fatalf("unable to read directory %s: %v", caCertsDir, err)
+	}
+
+	for _, entry := range entries {
+		if entry.IsDir() {
+			continue
+		}
+
+		if reason, skip := skipCertHashes[entry.Name()]; skip {
+			t.Logf("skipping %s: %s", entry.Name(), reason)
+
+			continue
+		}
+
+		t.Run(entry.Name(), func(t *testing.T) {
+			t.Parallel()
+
+			checkCertHash(t, caCertsDir+entry.Name())
+		})
+	}
+}
+
+func TestTrickyCertificates(t *testing.T) {
+	t.Parallel()
+
+	t.Run("negative serial number", func(t *testing.T) {
+		t.Parallel()
+
+		filename := caCertsDir + "349f2832.0" // /O=Agencia Catalana de Certificacio (NIF Q-0801176-I)/
+
+		cd, err := os.ReadFile(filename)
+		if err != nil {
+			t.Fatalf("unable to read certificate file %s: %v", filename, err)
+		}
+
+		p, _ := pem.Decode(cd)
+		if p == nil {
+			t.Fatalf("unable to decode PEM block of %s", filename)
+		}
+
+		if _, err = x509.ParseCertificate(p.Bytes); err == nil {
+			t.Errorf("expected error when parsing certificate %s, got nil", filename)
+		}
 	})
-})
+
+	for name, filename := range map[string]string{
+		"EE Certification Centre Root CA": caCertsDir + "128805a3.0", // /C=EE/O=AS Sertifitseerimiskeskus/CN=EE Certification Centre Root CA/emailAddress=pki@sk.ee
+		"E-Tugra Certification Authority": caCertsDir + "5273a94c.0", // /C=TR/L=Ankara/O=E-Tuğra EBG Bilişim Teknolojileri ve Hizmetleri A.Ş./OU=E-Tugra Sertifikasyon Merkezi/CN=E-Tugra Certification Authority
+		"Microsec e-Szigno Root CA 2009":  caCertsDir + "8160b96c.0", // /C=HU/L=Budapest/O=Microsec Ltd./CN=Microsec e-Szigno Root CA 2009/emailAddress=info@e-szigno.hu
+	} {
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+
+			checkCertHash(t, filename)
+		})
+	}
+}
