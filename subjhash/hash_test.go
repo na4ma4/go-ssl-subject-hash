@@ -7,10 +7,11 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/na4ma4/go-ssl-subject-hash/subjhash"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/ginkgo/extensions/table"
 	. "github.com/onsi/gomega"
+
+	"github.com/na4ma4/go-ssl-subject-hash/subjhash"
 )
 
 //nolint:gochecknoglobals // test variable
@@ -64,7 +65,8 @@ var _ = Describe("Subjhash/Hash", func() {
 		if certHashFile.Name() == "349f2832.0" { // negative serial number (pre go1.23 worked)
 			continue
 		}
-		certHashEntryList = append(certHashEntryList,
+		certHashEntryList = append(
+			certHashEntryList,
 			Entry(certHashFile.Name(), "../testdata/ca-certs/"+certHashFile.Name()),
 		)
 	}
@@ -92,17 +94,25 @@ var _ = Describe("Subjhash/Hash", func() {
 			Expect(err).To(HaveOccurred())
 		})
 
-		//nolint:golines // test variable
-		It("[128805a3.0] /C=EE/O=AS Sertifitseerimiskeskus/CN=EE Certification Centre Root CA/emailAddress=pki@sk.ee", func() {
-			checkCertHashFunc("../testdata/ca-certs/128805a3.0")
-		})
+		It(
+			"[128805a3.0] /C=EE/O=AS Sertifitseerimiskeskus/CN=EE Certification Centre Root CA/emailAddress=pki@sk.ee",
+			func() {
+				checkCertHashFunc("../testdata/ca-certs/128805a3.0")
+			},
+		)
 
-		It("[5273a94c.0] /C=TR/L=Ankara/O=E-Tu\xC4\x9Fra EBG Bili\xC5\x9Fim Teknolojileri ve Hizmetleri A.\xC5\x9E./OU=E-Tugra Sertifikasyon Merkezi/CN=E-Tugra Certification Authority", func() {
-			checkCertHashFunc("../testdata/ca-certs/5273a94c.0")
-		})
+		It(
+			"[5273a94c.0] /C=TR/L=Ankara/O=E-Tu\xC4\x9Fra EBG Bili\xC5\x9Fim Teknolojileri ve Hizmetleri A.\xC5\x9E./OU=E-Tugra Sertifikasyon Merkezi/CN=E-Tugra Certification Authority",
+			func() {
+				checkCertHashFunc("../testdata/ca-certs/5273a94c.0")
+			},
+		)
 
-		It("[8160b96c.0] /C=HU/L=Budapest/O=Microsec Ltd./CN=Microsec e-Szigno Root CA 2009/emailAddress=info@e-szigno.hu", func() {
-			checkCertHashFunc("../testdata/ca-certs/8160b96c.0")
-		})
+		It(
+			"[8160b96c.0] /C=HU/L=Budapest/O=Microsec Ltd./CN=Microsec e-Szigno Root CA 2009/emailAddress=info@e-szigno.hu",
+			func() {
+				checkCertHashFunc("../testdata/ca-certs/8160b96c.0")
+			},
+		)
 	})
 })

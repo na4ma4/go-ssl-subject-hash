@@ -8,6 +8,8 @@ import (
 )
 
 func TestSubjhash(t *testing.T) {
+	t.Parallel()
+
 	RegisterFailHandler(Fail)
 	RunSpecs(t, "Subjhash Suite")
 }
